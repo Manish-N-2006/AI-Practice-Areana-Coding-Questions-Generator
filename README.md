@@ -32,6 +32,13 @@
 - 🧪 **Sample & Hidden Test Cases**  
   Accurate judging using multiple test cases.
 
+- 🎮 Gamification (XP & Progress Tracking)
+   - Users earn **XP points** for every successfully solved problem
+   - The platform tracks:
+        - ✅ Number of problems solved
+        - ⭐ Total XP earned
+   - Progress is displayed in the arena dashboard to motivate consistent practice
+
 - 🎨 **Modern UI Flow**  
   Chat-style problem generation followed by a LeetCode-style coding arena.
 
@@ -56,15 +63,37 @@
 
 ---
 
+## 🗄️ Database & Persistence
+
+The platform uses **SQLite with SQLAlchemy ORM** to persist user data.
+
+### Stored User Data
+- User ID
+- Name & email (from Firebase Auth)
+- Number of questions solved
+- XP points earned
+
+This allows:
+- Persistent progress across sessions
+- Gamification features
+- Future expansion to leaderboards and analytics
+
+---
+
+
 ## 🧩 How It Works (High-Level Flow)
 
-1. User selects topic, difficulty, and language
-2. AI generates a coding problem and test cases
-3. Problem is displayed in the practice arena
-4. User writes code in Monaco Editor
-5. Code is executed via Judge0 service URL
-6. Output is compared with expected results
-7. Verdict is displayed to the user
+1. User logs in using Firebase Authentication  
+2. User selects topic, difficulty, and language  
+3. Gemini generates a coding problem and test cases  
+4. Problem is displayed in the practice arena  
+5. User writes code in Monaco Editor  
+6. Code is executed via Judge0 service URL  
+7. Output is compared with expected results  
+8. If all test cases pass:
+   - XP is awarded
+   - Solved question count is incremented  
+9. Updated progress is shown in the dashboard
 
 ---
 
