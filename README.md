@@ -43,6 +43,7 @@
 - **Flask** – Web framework
 - **SQLAlchemy** – ORM for database handling
 - **Gemini API** – AI-based coding question generation
+- **Gemini Model** - gemini-flash-lite-latest
 - **Judge0** – Code execution using Judge0 service endpoint  
   
 
@@ -66,6 +67,17 @@
 7. Verdict is displayed to the user
 
 ---
+
+### Gemini API Setup
+
+This project uses the Gemini API for AI-powered problem generation.
+
+1. Create a `.env` file
+2. Add your API key:
+
+```env
+GEMINI_API_KEY=your_api_key_here
+```
 
 ## 📁 Project Structure
 
