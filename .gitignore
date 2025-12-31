@@ -1,1 +1,14 @@
+# Secrets
 .env
+firebase-key.json
+
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Database
+*.db
+
+# Instance folder (Flask)
+instance/
