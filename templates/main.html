@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AI Practice Arena</title>
+
+<style>
+
+.dashboard {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  padding: 0 30px;
+  background: rgba(2,6,23,0.85);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid rgba(56,189,248,0.3);
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  z-index: 100;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+}
+
+.user-info h3 {
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.logout-btn {
+  padding: 8px 16px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 600;
+  color: white;
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  box-shadow: 0 0 12px rgba(239,68,68,0.6);
+}
+
+.logout-btn:hover {
+  opacity: 0.9;
+}
+
+.main-area {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 40px;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+
+body {
+  min-height: 100vh;
+  background: radial-gradient(circle at top, #1e3a8a, #020617 70%);
+  color: #e5e7eb;
+  padding-top: 90px;
+  }
+
+
+.card {
+  width: 720px;
+  max-width: 95%;
+  background: rgba(2,6,23,0.7);
+  backdrop-filter: blur(18px);
+  border-radius: 20px;
+  padding: 36px;
+  border: 1px solid rgba(56,189,248,0.3);
+  box-shadow: 0 0 50px rgba(56,189,248,0.15);
+}
+
+h1 {
+  font-size: 32px;
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+.subtitle {
+  text-align: center;
+  color: #94a3b8;
+  margin-bottom: 30px;
+}
+
+
+textarea {
+  width: 100%;
+  height: 90px;
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(15,23,42,0.9);
+  border: 1px solid rgba(56,189,248,0.3);
+  color: #e5e7eb;
+  resize: none;
+  font-size: 16px;
+  outline: none;
+}
+
+
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-top: 20px;
+}
+
+
+select {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(15,23,42,0.9);
+  color: white;
+  border: 1px solid rgba(56,189,248,0.3);
+  font-size: 15px;
+  outline: none;
+}
+
+
+.slider-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+input[type="range"] {
+  width: 100%;
+}
+
+.slider-label {
+  font-size: 14px;
+  color: #38bdf8;
+}
+
+
+button {
+  margin-top: 30px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  box-shadow:
+    0 0 15px rgba(56,189,248,0.8),
+    0 0 40px rgba(37,99,235,0.6);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+button:hover {
+  transform: scale(1.03);
+  box-shadow:
+    0 0 25px rgba(56,189,248,1),
+    0 0 60px rgba(37,99,235,0.9);
+}
+
+
+.loading {
+  position: fixed;
+  inset: 0;
+  background: rgba(2,6,23,0.9);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  z-index: 10;
+}
+
+.spinner {
+  width: 60px;
+  height: 60px;
+  border: 6px solid rgba(255,255,255,0.2);
+  border-top: 6px solid #38bdf8;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 20px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+</style>
+</head>
+
+<body>
+<header class="dashboard">
+  <div class="user-info">
+    <h3>Welcome, {{ name or email }}</h3>
+    <span>XP: {{ xp }}</span>
+    <span>•</span>
+    <span>Solved: {{ solved }}</span>
+  </div>
+
+  <a href="/logout" class="logout-btn">Logout</a>
+</header>
+
+<main class="main-area">
+<div class="card">
+  <h1>AI Practice Arena</h1>
+  <p class="subtitle">
+    Tell me what you want to practice.  
+    I'll generate a personalized coding session for you.
+  </p>
+
+  <textarea id="topic"
+    placeholder="Example: arrays, strings, recursion, dynamic programming…"></textarea>
+
+  <div class="controls">
+    <select id="selectedLanguage">
+      <option value="python">Python</option>
+      <option value="c">C</option>
+      <option value="java">Java</option>
+      <option value="cpp">C++</option>  
+    </select>
+
+    <div class="slider-box">
+      <span class="slider-label" id="diffLabel">Difficulty: Medium</span>
+      <input type="range" id="difficulty" min="1" max="3" value="2">
+    </div>
+  </div>
+
+  <button onclick="startPractice()">🚀 Start Practice</button>
+</div>
+</main>
+
+
+<div class="loading" id="loading">
+  <div class="spinner"></div>
+  <p>Generating your personalized questions…</p>
+</div>
+
+<script>
+const diffMap = {
+  1: "Easy",
+  2: "Medium",
+  3: "Hard"
+};
+
+document.getElementById("difficulty").addEventListener("input", e => {
+  document.getElementById("diffLabel").innerText =
+    "Difficulty: " + diffMap[e.target.value];
+});
+
+function startPractice() {
+  const topic = document.getElementById("topic").value.trim();
+  const language = document.getElementById("selectedLanguage").value;
+  const difficulty = diffMap[document.getElementById("difficulty").value];
+
+  if (!topic) {
+    alert("Please enter a topic to practice");
+    return;
+  }
+
+  localStorage.setItem("selected_language", language);
+  sessionStorage.setItem("topic", topic);
+  sessionStorage.setItem("language", language);
+  sessionStorage.setItem("difficulty", difficulty);
+
+  document.getElementById("loading").style.display = "flex";
+
+  setTimeout(() => {
+    window.location.href = "/practice";
+  }, 1200);
+}
+
+</script>
+
+</body>
+</html>
