@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login | AI Practice Arena</title>
+
+  
+  <link rel="stylesheet" href="/static/style_login.css">
+</head>
+
+<body>
+
+  <div class="login-card">
+    <h1>AI Practice Arena</h1>
+    <p class="tagline">Practice • Compete • Level Up</p>
+
+    
+    <button onclick="loginWithGoogle()" class="google-btn">
+      <img src="https://www.svgrepo.com/show/475656/google-color.svg" alt="Google">
+      Continue with Google
+    </button>
+
+    <div class="divider"><span>or</span></div>
+
+    <input type="text" id="nameInput" placeholder="Your name (optional)">
+    <input type="email" id="emailInput" placeholder="Email address">
+
+    <button class="login-btn" onclick="manualLogin()">Continue</button>
+
+    <p class="footer-text">
+      Free users get <b>3 AI-generated questions per day</b>
+    </p>
+  </div>
+  
+  <footer>Made by Manish</footer>
+  
+  <script type="module" src="/static/auth.js"></script>
+
+  
+  <script>
+    async function manualLogin() {
+      const name = document.getElementById("nameInput").value.trim();
+      const email = document.getElementById("emailInput").value.trim();
+
+      if (!email) {
+        alert("Email is required");
+        return;
+      }
+
+      const res = await fetch("/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: name,
+          email: email,
+          provider: "manual"
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        window.location.href = "/arena";
+      }
+    }
+  </script>
+
+</body>
+</html>
