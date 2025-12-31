@@ -5,6 +5,8 @@ from firebase_admin import auth, credentials
 from time import time
 from extensions import db
 from models.user import User
+from dotenv import load_dotenv
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -269,3 +271,4 @@ def arena():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
