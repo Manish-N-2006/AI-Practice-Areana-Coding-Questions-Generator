@@ -1,0 +1,144 @@
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", system-ui, sans-serif;
+}
+
+
+body {
+  height: 100vh;
+  background: radial-gradient(circle at top, #1e3a8a, #020617 70%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #e5e7eb;
+}
+
+
+.login-card {
+  width: 420px;
+  max-width: 90%;
+  background: rgba(2, 6, 23, 0.75);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 36px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  box-shadow: 0 0 60px rgba(56, 189, 248, 0.2);
+  text-align: center;
+}
+
+
+.login-card h1 {
+  font-size: 30px;
+  margin-bottom: 6px;
+}
+
+.tagline {
+  color: #94a3b8;
+  font-size: 14px;
+  margin-bottom: 28px;
+}
+
+.google-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-size: 15px;
+  font-weight: 600;
+  background: white;
+  color: #111827;
+  margin-bottom: 18px;
+}
+
+.google-btn img {
+  width: 18px;
+  height: 18px;
+}
+
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 18px 0;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.divider::before,
+.divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: rgba(148, 163, 184, 0.3);
+}
+
+.divider span {
+  margin: 0 10px;
+}
+
+/* INPUTS */
+input {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e5e7eb;
+  margin-bottom: 14px;
+  outline: none;
+  font-size: 15px;
+}
+
+input::placeholder {
+  color: #94a3b8;
+}
+
+/* LOGIN BUTTON */
+.login-btn {
+  width: 100%;
+  padding: 14px;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  font-weight: 700;
+  color: white;
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+  box-shadow:
+    0 0 15px rgba(56, 189, 248, 0.7),
+    0 0 40px rgba(37, 99, 235, 0.6);
+  margin-top: 6px;
+}
+
+.login-btn:hover {
+  transform: scale(1.02);
+}
+
+
+.footer-text {
+  margin-top: 18px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+
+footer {
+  position: fixed;
+  bottom: 18px;
+  width: 100%;
+  text-align: center;
+  font-size: 13px;
+  color: #94a3b8;
+  letter-spacing: 0.5px;
+  opacity: 0.85;
+  pointer-events: none;
+}
+
