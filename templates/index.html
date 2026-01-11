@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Practice Arena</title>
+
+  <link rel="stylesheet" href="static/style.css">
+  <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+</head>
+
+<body class="light">
+
+<header class="topbar">
+  <div class="brand">
+    <h3>AI Practice Arena</h3>
+    <span class="subtitle">Practice • Compete • Level Up</span>
+  </div>
+
+  <div class="actions">
+    <div id="regen-info" class="regen-info">🔄 3 regenerations left</div>
+
+    <div class="btn-group">
+      <button onclick="runCode()">RUN</button>
+      <button class="primary" onclick="submitCode()">SUBMIT</button>
+      <button class="secondary" onclick="regenerateQuestion()">🔄 Regenerate</button>
+      <button onclick="toggleTheme()">🌙 / ☀️</button>
+      <button class="logout" onclick="logout()">Logout</button>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <aside class="panel">
+    <h2 id="q-title">Loading…</h2>
+    <p id="q-desc"></p>
+
+    <div class="divider"></div>
+
+    <h4>Sample Test Cases</h4>
+    <pre id="samples"></pre>
+  </aside>
+
+  <section class="editor-area">
+    <div id="editor"></div>
+    <div id="results" class="results hidden"></div>
+  </section>
+
+</div>
+
+<div id="completionBox" class="completion hidden">
+  <div class="completion-card">
+    <h2>🎉 Congratulations!</h2>
+    <p>You’ve successfully solved this problem.</p>
+    <button onclick="fetchQuestion()">Try Another Question</button>
+  </div>
+</div>
+
+<script>
+let editor;
+
+require.config({ paths: { vs: "https://unpkg.com/monaco-editor@latest/min/vs" }});
+
+require(["vs/editor/editor.main"], function () {
+  editor = monaco.editor.create(document.getElementById("editor"), {
+    value: "# Write your code here\n",
+    language: localStorage.getItem("selected_language") || "python",
+    theme: "vs-dark",
+    automaticLayout: true
+  });
+});
+
+async function fetchQuestion() {
+  document.getElementById("completionBox").classList.add("hidden");
+
+  const res = await fetch("/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      topic: sessionStorage.getItem("topic"),
+      difficulty: sessionStorage.getItem("difficulty"),
+      language: sessionStorage.getItem("language")
+    })
+  });
+
+  const q = await res.json();
+
+  document.getElementById("q-title").innerText = q.title;
+  document.getElementById("q-desc").innerText = q.problem_statement;
+
+  document.getElementById("samples").innerText =
+    q.samples.map(s => `Input:\n${s.input}\nOutput:\n${s.output}`).join("\n\n");
+
+  window.currentTestcases = q.testcases;
+}
+
+fetchQuestion();
+
+async function runCode() {
+  const code = editor.getValue();
+  const language = sessionStorage.getItem("language");
+
+  const res = await fetch("/run", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ language, code })
+  });
+
+  const data = await res.json();
+
+  document.getElementById("results").classList.remove("hidden");
+  document.getElementById("results").innerText =
+    data.output || data.message || "No output";
+}
+
+async function submitCode() {
+  const code = editor.getValue();
+  const language = sessionStorage.getItem("language");
+
+  const res = await fetch("/submit", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      language,
+      code,
+      testcases: window.currentTestcases
+    })
+  });
+
+  const data = await res.json();
+
+  if (data.status !== "ok") {
+    alert("Execution failed");
+    return;
+  }
+
+  let allPassed = true;
+  let outputText = "";
+
+  data.results.forEach(r => {
+    outputText += `Input:\n${r.input}\nExpected:\n${r.expected}\nGot:\n${r.got}\n\n`;
+    if (!r.pass) allPassed = false;
+  });
+
+  document.getElementById("results").classList.remove("hidden");
+  document.getElementById("results").innerText = outputText;
+
+  if (allPassed) {
+    await fetch("/mark_solved", { method: "POST" });
+    document.getElementById("completionBox").classList.remove("hidden");
+  }
+}
+
+function regenerateQuestion() {
+  fetchQuestion();
+}
+
+function toggleTheme() {
+  document.body.classList.toggle("light");
+}
+
+function logout() {
+  window.location.href = "/logout";
+}
+</script>
+
+</body>
+</html>
