@@ -26,7 +26,7 @@ if not firebase_json:
 cred_dict = json.loads(firebase_json)
 cred = credentials.Certificate(cred_dict)
 
-if not firebase_ admin._apps:
+if not firebase_admin._apps:
     firebase_admin.initialize_app(cred)
 
 question_cache = []
@@ -287,6 +287,7 @@ def arena():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
 
