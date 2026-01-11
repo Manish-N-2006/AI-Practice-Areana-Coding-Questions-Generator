@@ -1,14 +1,22 @@
 # Secrets
 .env
 firebase-key.json
+*.json
 
 # Python
 __pycache__/
 *.pyc
 venv/
+.env.*
+
+# Flask
+instance/
 
 # Database
 *.db
+*.sqlite3
 
-# Instance folder (Flask)
-instance/
+# OS / Editor
+.DS_Store
+.vscode/
+.idea/
