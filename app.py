@@ -9,12 +9,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///arena.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 app.secret_key = "secret"
-cred = credentials.Certificate("firebase-key.json")
+firebase_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
+cred_dict = json.loads(firebase_json)
+cred = credentials.Certificate(cred_dict)
 firebase_admin.initialize_app(cred)
 question_cache = []
 
@@ -271,4 +272,5 @@ def arena():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
