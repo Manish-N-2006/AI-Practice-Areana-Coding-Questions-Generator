@@ -1,3 +1,5 @@
+import os
+import json
 from flask import Flask, request, jsonify, render_template, session, redirect
 import requests
 import firebase_admin
@@ -12,11 +14,21 @@ app = Flask(__name__)
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///arena.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
-app.secret_key = "secret"
+
+with app.app_context():
+    db.create_all()
+
+app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
+
 firebase_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
+if not firebase_json:
+    raise RuntimeError("FIREBASE_SERVICE_ACCOUNT env variable not set")
 cred_dict = json.loads(firebase_json)
 cred = credentials.Certificate(cred_dict)
-firebase_admin.initialize_app(cred)
+
+if not firebase_ admin._apps:
+    firebase_admin.initialize_app(cred)
+
 question_cache = []
 
 JUDGE0_URL = "https://ce.judge0.com/submissions?base64_encoded=false&wait=true"
@@ -53,6 +65,8 @@ def genreate():
         if not question:
             return jsonify({
         "error": "AI failed to generate question"}), 500
+
+        question_cache.append(question)
         remaining = 3 - session["regen_count"]
         return jsonify({
         **question,
@@ -239,6 +253,7 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
+    question_cache.clear()
     return redirect("/")
 
 @app.route("/mark_solved", methods=["POST"])
@@ -272,5 +287,6 @@ def arena():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
 
