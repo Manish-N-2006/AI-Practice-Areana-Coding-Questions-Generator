@@ -1,3 +1,74 @@
+.ai-box {
+  background: #1e1e1e;
+  border: 1px solid #444;
+  padding: 12px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.light .ai-box {
+  background: #f4f4f4;
+  color: #000;
+}
+
+
+/* =========================
+   Rate Limit / Regen Box
+   ========================= */
+
+.regen-info {
+  background: linear-gradient(135deg, #1e3a8a, #2563eb);
+  color: #ffffff;
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+}
+
+body.light .regen-info {
+  background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+  color: #0f172a;
+  border: 1px solid #38bdf8;
+}
+
+body.light .regen-info span {
+  color: #1d4ed8;
+}
+
+
+/* Numbers pop */
+.regen-info span {
+  color: #fde047; /* bright yellow */
+  font-weight: 700;
+}
+
+/* Warning state */
+.regen-warning {
+  background: linear-gradient(135deg, #92400e, #f59e0b) !important;
+  color: #fff;
+}
+
+/* Danger state */
+.regen-danger {
+  background: linear-gradient(135deg, #7f1d1d, #dc2626) !important;
+  color: #fff;
+}
+
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+
+
 /* ---------- LOGIN PAGE ---------- */
 .login-page {
   height: 100vh;
