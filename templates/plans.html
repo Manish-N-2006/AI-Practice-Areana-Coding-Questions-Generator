@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Buy Plan | AI Practice Arena</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #0f172a;
+            color: #e5e7eb;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            color: #9ca3af;
+        }
+
+        .plans {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            flex-wrap: wrap;
+            padding: 40px 20px;
+        }
+
+        .plan {
+            background: #111827;
+            border-radius: 12px;
+            width: 280px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+            transition: transform 0.3s;
+        }
+
+        .plan:hover {
+            transform: translateY(-10px);
+        }
+
+        .plan h2 {
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+        }
+
+        .price {
+            font-size: 2.2rem;
+            margin: 15px 0;
+            color: #22c55e;
+        }
+
+        .plan ul {
+            list-style: none;
+            padding: 0;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .plan ul li {
+            margin: 10px 0;
+            color: #d1d5db;
+        }
+
+        .btn {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 12px 25px;
+            background: #2563eb;
+            color: white;
+            border-radius: 6px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background 0.3s;
+        }
+
+        .btn:hover {
+            background: #1d4ed8;
+        }
+
+        .popular {
+            border: 2px solid #22c55e;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>AI Practice Arena</h1>
+    <p>Choose the plan that fits your coding journey 🚀</p>
+</header>
+
+<section class="plans">
+
+    
+    <div class="plan">
+        <h2>Free</h2>
+        <div class="price">₹0</div>
+        <ul>
+            <li>✔ Daily limited practice</li>
+            <li>✔ Basic AI-generated problems</li>
+            <li>✔ Limited AI Code Review </li>
+            <li>✖ No history tracking</li>
+            <li>✖ No advanced hints</li>
+        </ul>
+        <a href="#" class="btn">Get Started</a>
+    </div>
+
+    
+    <div class="plan popular">
+        <h2>Premium</h2>
+        <div class="price">₹499 / month</div>
+        <ul>
+            <li>✔ Unlimited Quesstion Generation</li>
+            <li>✔ Unlimited AI Code Review </li>
+            <li>✔ Unlimited AI Solutions</li>
+            <li>✔ Unlimited AI hints</li>
+            <li>✔ History Tracking</li>
+        </ul>
+        <a href="#" class="btn">Buy Premium</a>
+    </div>
+</section>
+
+<footer>
+    © 2026 AI Practice Arena • Learn • Practice 
+</footer>
+
+</body>
+</html>
