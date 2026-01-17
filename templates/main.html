@@ -5,6 +5,25 @@
 <title>AI Practice Arena</title>
 
 <style>
+.upgrade-btn {
+  padding: 6px 12px;
+  font-size: 14px;
+  font-weight: 600;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+  color: #020617;
+
+  box-shadow: 0 0 8px rgba(245,158,11,0.5);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.upgrade-btn:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 12px rgba(245,158,11,0.8);
+}
 
 .dashboard {
   position: fixed;
@@ -191,6 +210,10 @@ button:hover {
   margin-bottom: 20px;
 }
 
+.user-info {
+  gap: 10px;
+}
+
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
@@ -204,39 +227,78 @@ button:hover {
     <span>XP: {{ xp }}</span>
     <span>•</span>
     <span>Solved: {{ solved }}</span>
+
+    <button class="upgrade-btn" onclick="buyPro()">Upgrade Plan</button>
   </div>
 
   <a href="/logout" class="logout-btn">Logout</a>
 </header>
 
 <main class="main-area">
-<div class="card">
-  <h1>AI Practice Arena</h1>
-  <p class="subtitle">
-    Tell me what you want to practice.  
-    I'll generate a personalized coding session for you.
-  </p>
+  <div class="card">
+    <h1>AI Practice Arena</h1>
 
-  <textarea id="topic"
-    placeholder="Example: arrays, strings, recursion, dynamic programming…"></textarea>
-
-  <div class="controls">
-    <select id="selectedLanguage">
-      <option value="python">Python</option>
-      <option value="c">C</option>
-      <option value="java">Java</option>
-      <option value="cpp">C++</option>  
-    </select>
-
-    <div class="slider-box">
-      <span class="slider-label" id="diffLabel">Difficulty: Medium</span>
-      <input type="range" id="difficulty" min="1" max="3" value="2">
-    </div>
-  </div>
-
-  <button onclick="startPractice()">🚀 Start Practice</button>
+   
+<div style="
+  margin: 16px 0 22px;
+  padding: 14px;
+  border-radius: 14px;
+  background: rgba(56,189,248,0.12);
+  border: 1px solid rgba(56,189,248,0.35);
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  font-size: 15px;
+">
+  <div>🔄 Generations left: <strong>{{ regen_limit }}</strong></div>
+  <div>🤖 AI Solutions left: <strong>{{ solution_limit }}</strong></div>
+  <div>💡 AI Hints left: <strong>{{ hint_limit }}</strong></div>
+  <div>🧠 Code Reviews left: <strong>{{ review_limit }}</strong></div>
 </div>
+
+
+    {% if remaining == 0 %}
+    <!-- ⭐ Buy Pro Plan CTA -->
+    <button
+      style="
+        margin-bottom: 16px;
+        background: linear-gradient(135deg, #f59e0b, #ea580c);
+        box-shadow: 0 0 22px rgba(245,158,11,0.8);
+      "
+      onclick="buyPro()"
+    >
+      ⭐ Buy Pro Plan
+    </button>
+    {% endif %}
+
+    <p class="subtitle">
+      Tell me what you want to practice.  
+      I'll generate a personalized coding session for you.
+    </p>
+
+    <textarea
+      id="topic"
+      placeholder="Example: arrays, strings, recursion, dynamic programming…"
+    ></textarea>
+
+    <div class="controls">
+      <select id="selectedLanguage">
+        <option value="python">Python</option>
+        <option value="c">C</option>
+        <option value="java">Java</option>
+        <option value="cpp">C++</option>
+      </select>
+
+      <div class="slider-box">
+        <span class="slider-label" id="diffLabel">Difficulty: Medium</span>
+        <input type="range" id="difficulty" min="1" max="3" value="2">
+      </div>
+    </div>
+
+    <button onclick="startPractice()">🚀 Start Practice</button>
+  </div>
 </main>
+
 
 
 <div class="loading" id="loading">
@@ -277,6 +339,11 @@ function startPractice() {
     window.location.href = "/practice";
   }, 1200);
 }
+
+function buyPro() {
+  window.location.href = "/plans";
+}
+
 
 </script>
 
