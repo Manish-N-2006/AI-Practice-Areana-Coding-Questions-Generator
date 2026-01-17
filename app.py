@@ -24,7 +24,7 @@ def init_limits():
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///arena.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
-migrate = Migrate(app, db)   
+   
 app.secret_key = "secret"
 cred = credentials.Certificate("firebase-key.json")
 firebase_admin.initialize_app(cred)
@@ -446,4 +446,5 @@ def arena():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
 
