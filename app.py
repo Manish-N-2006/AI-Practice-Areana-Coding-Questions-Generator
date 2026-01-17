@@ -1,5 +1,3 @@
-import os
-import json
 from flask import Flask, request, jsonify, render_template, session, redirect
 import requests
 import firebase_admin
@@ -7,28 +5,30 @@ from firebase_admin import auth, credentials
 from time import time
 from extensions import db
 from models.user import User
+from datetime import date
+from flask_migrate import Migrate
 from dotenv import load_dotenv
 load_dotenv()
 
+FREE_DAILY_QUOTA = 4
 app = Flask(__name__)
+
+@app.before_request
+def init_limits():
+    session.setdefault("regen_limit", 3)       
+    session.setdefault("solution_limit", 4)    
+    session.setdefault("hint_limit", 2)        
+    session.setdefault("review_limit", 5)      
+  
+
+
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///arena.db"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
-
-with app.app_context():
-    db.create_all()
-
-app.secret_key = os.environ.get("SECRET_KEY", "dev-secret")
-
-firebase_json = os.environ.get("FIREBASE_SERVICE_ACCOUNT")
-if not firebase_json:
-    raise RuntimeError("FIREBASE_SERVICE_ACCOUNT env variable not set")
-cred_dict = json.loads(firebase_json)
-cred = credentials.Certificate(cred_dict)
-
-if not firebase_admin._apps:
-    firebase_admin.initialize_app(cred)
-
+migrate = Migrate(app, db)   
+app.secret_key = "secret"
+cred = credentials.Certificate("firebase-key.json")
+firebase_admin.initialize_app(cred)
 question_cache = []
 
 JUDGE0_URL = "https://ce.judge0.com/submissions?base64_encoded=false&wait=true"
@@ -40,55 +40,172 @@ LANGUAGE_MAP = {
     "javascript": 63
 }
 
-from generate import generate_coding_question
+def check_and_reset_quota(user):
+    today = date.today()
+    if user.quota_date != today:
+        user.quota_date = today
+        user.daily_quota_used = 0
+        db.session.commit()
+
+from generate import generate_coding_question, generate_ai_code_review
+
 
 @app.route("/generate", methods=["POST"])
-def genreate():
-    if "regen_count" not in session:
-        session["regen_count"] = 0
+def generate():
+    if "user_id" not in session:
+        return jsonify({"error": "Unauthorized"}), 401
 
-    if session["regen_count"] >= 3:
+    user = db.session.get(User, session["user_id"])
+    check_and_reset_quota(user)
+
+    if user.daily_quota_used >= FREE_DAILY_QUOTA:
         return jsonify({
-            "error": "Regeneration limit reached (3/3)"
+            "error": "Daily free quota exhausted",
+            "remaining": 0
         }), 429
 
-    session["regen_count"] += 1
-    try:
-        if question_cache:
-            return jsonify(question_cache[-1])
-        data = request.json
-        topic = data.get("topic")
-        difficulty = data.get("difficulty")
-        language = data.get("language")
+    
+    user.daily_quota_used += 1
+    db.session.commit()
 
-        question = generate_coding_question(topic, difficulty, language)
-        if not question:
-            return jsonify({
-        "error": "AI failed to generate question"}), 500
+    data = request.json
+    topic = data.get("topic")
+    difficulty = data.get("difficulty")
+    language = data.get("language")
 
-        question_cache.append(question)
-        remaining = 3 - session["regen_count"]
-        return jsonify({
+    question = generate_coding_question(topic, difficulty, language)
+    if not question:
+        return jsonify({"error": "AI generation failed"}), 500
+
+    remaining = FREE_DAILY_QUOTA - user.daily_quota_used
+    session["current_question"] = question
+    session.pop("solution_seen", None)
+    session.pop("hint_seen", None)
+    session["solution_used_for_current"] = False
+    session["review_seen"] = False
+
+ 
+
+    return jsonify({
         **question,
-        "remaining": remaining
+        "ai_remaining": remaining 
     })
 
-    except Exception as e:
-        import traceback
-        print("GENERATE FAILED ")
-        traceback.print_exc() 
-        return jsonify({"error": "server error"}), 500
+@app.route("/ai/code-review", methods=["POST"])
+def ai_code_review():
+    data = request.json or {}
+
+    if "current_question" not in session:
+        frontend_q = data.get("question")
+        if frontend_q:
+            session["current_question"] = frontend_q
+        else:
+            return jsonify({
+                "review": "⚠️ No active question. Please regenerate."
+            })
+
+    if session.get("review_limit", 0) <= 0:
+        return jsonify({
+            "review": "❌ AI Code Review limit reached."
+        })
+
+    if not session.get("review_seen"):
+        session["review_seen"] = True
+        return jsonify({
+            "review": "👀 Try debugging once. Click again if still stuck."
+        })
+
+    session["review_limit"] -= 1   # ✅ FIX
+
+    question = session["current_question"]
+    problem = question["problem_statement"]
+    code = data.get("code", "")
+    language = data.get("language", "python")
+
+    review = generate_ai_code_review(problem, code, language)
+    return jsonify({"review": review})
+
+
+
+@app.route("/ai/solution", methods=["POST"])
+def ai_solution():
+    data = request.json or {}
+
+    # ✅ restore from frontend if session lost
+    if "current_question" not in session:
+        frontend_q = data.get("question")
+        if frontend_q:
+            session["current_question"] = frontend_q
+        else:
+            return jsonify({
+                "solution": "⚠️ No active question. Please regenerate.",
+                "remaining": session.get("solution_limit", 0)
+            })
+
+    question = session["current_question"]
+
+    if session["solution_limit"] <= 0:
+        return jsonify({
+            "solution": "❌ AI Solution limit reached.",
+            "remaining": 0
+        })
+
+    if not session.get("solution_used_for_current"):
+        session["solution_used_for_current"] = True
+        return jsonify({
+            "solution": "😄 Bro… first try solving it yourself. Click again if needed.",
+            "remaining": session["solution_limit"]
+        })
+
+    session["solution_limit"] -= 1
+
+    sol = question.get("solution", {})
+    content = (
+        f"🧠 Explanation:\n{sol.get('explanation','')}\n\n"
+        f"💻 Code:\n{sol.get('code','')}"
+    )
+
+    return jsonify({
+        "solution": content,
+        "remaining": session["solution_limit"]
+    })
+
+
+
 
 @app.route("/practice")
 def practice():
     return render_template("index.html")
 
+@app.route("/api/limits")
+def api_limits():
+    return jsonify({
+        "regen": session.get("regen_limit", 0),
+        "solution": session.get("solution_limit", 0),
+        "review": session.get("review_limit", 0),
+        "hint": session.get("hint_limit", 0),
+    })
+
+
 @app.route("/submit", methods=["POST"])
 def submit():
-    data = request.json
-    language = data["language"]
-    code = data["code"]
-    testcases = data["testcases"]
+    data = request.json or {}
+
+    language = data.get("language")
+    code = data.get("code")
+    testcases = data.get("testcases")
+
+    if not language or not code:
+        return jsonify({
+            "status": "error",
+            "message": "Language or code missing"
+        }), 400
+
+    if not testcases:
+        return jsonify({
+            "status": "error",
+            "message": "No testcases available. Please regenerate the question."
+        }), 400
 
     result = run_multiple_tests(language, code, testcases)
 
@@ -126,7 +243,7 @@ def run_multiple_tests(language, code, testcases):
         payload = {
             "language_id": LANGUAGE_MAP[language],
             "source_code": code,
-            "stdin": normalize_input(tc["input"]) or " "
+            "stdin": normalize_input(tc["input"])
 
         }
 
@@ -202,6 +319,7 @@ def run():
     data = request.json or {}
     language = data.get("language")
     code = data.get("code")
+    testcases = data.get("testcases", [])
 
     if not language or not code:
         return jsonify({
@@ -209,22 +327,30 @@ def run():
             "message": "language and code are required"
         }), 400
 
-    
-    user_input = data.get("input", "")
-    user_input = normalize_input(user_input)
+    if not testcases:
+        return jsonify({
+            "status": "error",
+            "message": "No testcases found"
+        }), 400
 
-    
-    if not user_input:
-        user_input = " "   
+   
+    tc = testcases[0]
+    user_input = normalize_input(tc.get("input", ""))
+    expected = tc.get("output", "").strip()
 
-    output = run_code(language, code, user_input)
+    output = run_code(language, code, user_input).strip()
 
     return jsonify({
         "status": "ok",
-        "mode": "single",
-        "input_used": user_input,
-        "output": output
+        "input": user_input,
+        "your_output": output,
+        "expected_output": expected,
+        "pass": output == expected
     })
+
+@app.route("/home")
+def home():
+    return render_template("main.html")
 
 
 @app.route("/")
@@ -253,7 +379,6 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    question_cache.clear()
     return redirect("/")
 
 @app.route("/mark_solved", methods=["POST"])
@@ -269,25 +394,56 @@ def mark_solved():
     db.session.commit()
     return jsonify({"success": True})
 
+@app.route("/plans")
+def plans():
+    return render_template("plans.html")
+
 @app.route("/arena")
 def arena():
     if "user_id" not in session:
         return redirect("/")
 
-    user = User.query.get(session["user_id"])
+    user = db.session.get(User, session["user_id"])
+
+    # Reset daily quota if needed
+    check_and_reset_quota(user)
+
+    # Calculate remaining daily quota
+    remaining = max(0, FREE_DAILY_QUOTA - user.daily_quota_used)
+
+    # Initialize session limits if not present
+    session.setdefault("regen_limit", 3)
+    session.setdefault("solution_limit", 3)   # keep consistent
+    session.setdefault("hint_limit", 2)
+    session.setdefault("review_limit", 5)
+
+    # 🔥 CRITICAL FIX: sync display limits with remaining quota
+    if remaining == 0:
+        regen_limit = 0
+        solution_limit = 0
+        hint_limit = 0
+        review_limit = 0
+    else:
+        regen_limit = session["regen_limit"]
+        solution_limit = session["solution_limit"]
+        hint_limit = session["hint_limit"]
+        review_limit = session["review_limit"]
 
     return render_template(
         "main.html",
         name=user.name,
         email=user.email,
         xp=user.xp,
-        solved=user.questions_solved
+        solved=user.questions_solved,
+
+        remaining=remaining,
+        regen_limit=regen_limit,
+        solution_limit=solution_limit,
+        hint_limit=hint_limit,
+        review_limit=review_limit,
     )
+
 
 
 if __name__ == "__main__":
     app.run(debug=True)
-
-
-
-
