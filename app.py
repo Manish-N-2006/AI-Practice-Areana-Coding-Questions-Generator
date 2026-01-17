@@ -6,7 +6,6 @@ from time import time
 from extensions import db
 from models.user import User
 from datetime import date
-from flask_migrate import Migrate
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -447,3 +446,4 @@ def arena():
 
 if __name__ == "__main__":
     app.run(debug=True)
+
