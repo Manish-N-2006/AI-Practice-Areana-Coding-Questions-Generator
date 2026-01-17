@@ -4,8 +4,97 @@
   <meta charset="UTF-8">
   <title>AI Practice Arena</title>
 
-  <link rel="stylesheet" href="static/style.css">
+  <link rel="stylesheet" href="/static/style.css">
   <script src="https://unpkg.com/monaco-editor@latest/min/vs/loader.js"></script>
+
+  <style>
+    .editor-area {
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .ai-box {
+      background: #111;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 8px;
+      margin-bottom: 10px;
+      max-height: 220px;
+      overflow: hidden;
+    }
+
+    .ai-box.hidden {
+      display: none;
+    }
+
+    .ai-box-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #333;
+      margin-bottom: 6px;
+    }
+
+    .ai-box-header h3 {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .ai-close-btn {
+      background: transparent;
+      border: none;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    /* AI content */
+    #aiContent {
+      max-height: 170px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      overflow-x: hidden;
+      font-size: 13px;
+    }
+
+    /* ---------- LIGHT THEME ---------- */
+    body.light {
+      background: #f5f5f5;
+      color: #000;
+    }
+
+    body.light .ai-box {
+      background: #ffffff;
+      border-color: #ccc;
+    }
+
+    body.light .ai-box-header {
+      border-color: #ccc;
+    }
+
+    body.light #aiContent {
+      color: #000;        /* ✅ BLACK TEXT */
+    }
+
+    body.light .ai-close-btn {
+      color: #000;
+    }
+
+    /* ---------- DARK THEME ---------- */
+    body.dark {
+      background: #0f0f0f;
+      color: #fff;
+    }
+
+    body.dark #aiContent {
+      color: #eaeaea;
+    }
+
+    body.dark .ai-close-btn {
+      color: #fff;
+    }
+  </style>
 </head>
 
 <body class="light">
@@ -17,35 +106,37 @@
   </div>
 
   <div class="actions">
-    <div id="regen-info" class="regen-info">🔄 3 regenerations left</div>
-
-    <div class="btn-group">
-      <button onclick="runCode()">RUN</button>
-      <button class="primary" onclick="submitCode()">SUBMIT</button>
-      <button class="secondary" onclick="regenerateQuestion()">🔄 Regenerate</button>
-      <button onclick="toggleTheme()">🌙 / ☀️</button>
-      <button class="logout" onclick="logout()">Logout</button>
-    </div>
+    <button onclick="goHome()">🏠 Home</button>
+    <button onclick="runCode()">RUN</button>
+    <button onclick="submitCode()" class="primary">SUBMIT</button>
+    <button onclick="getAISolution()">🤖 AI Solution</button>
+    <button onclick="getAICodeReview()">🧠 AI Code Review</button>
+    <button onclick="regenerateQuestion()">🔄 Regenerate</button>
+    <button onclick="toggleTheme()">🌙 / ☀️</button>
+    <button onclick="logout()">Logout</button>
   </div>
 </header>
 
 <div class="container">
-
   <aside class="panel">
     <h2 id="q-title">Loading…</h2>
     <p id="q-desc"></p>
-
-    <div class="divider"></div>
-
     <h4>Sample Test Cases</h4>
     <pre id="samples"></pre>
   </aside>
 
   <section class="editor-area">
-    <div id="editor"></div>
-    <div id="results" class="results hidden"></div>
-  </section>
+    <div id="aiBox" class="ai-box hidden">
+      <div class="ai-box-header">
+        <h3 id="aiTitle"></h3>
+        <button class="ai-close-btn" onclick="closeAIBox()">✖</button>
+      </div>
+      <pre id="aiContent"></pre>
+    </div>
 
+    <div id="editor" style="height:400px;"></div>
+    <div id="results"></div>
+  </section>
 </div>
 
 <div id="completionBox" class="completion hidden">
@@ -57,72 +148,184 @@
 </div>
 
 <script>
+/* ---------- THEME ---------- */
+let currentTheme = localStorage.getItem("theme") || "light";
+document.body.className = currentTheme;
+
+/* ---------- AI BOX ---------- */
+function goHome() {
+  window.location.href = "/arena";
+}
+
+function showAIBox(title, content) {
+  aiBox.classList.remove("hidden");
+  aiTitle.innerText = title;
+  aiContent.innerText = content;
+}
+function closeAIBox() {
+  aiBox.classList.add("hidden");
+}
+
+/* ---------- MONACO ---------- */
 let editor;
-
 require.config({ paths: { vs: "https://unpkg.com/monaco-editor@latest/min/vs" }});
-
 require(["vs/editor/editor.main"], function () {
   editor = monaco.editor.create(document.getElementById("editor"), {
     value: "# Write your code here\n",
-    language: localStorage.getItem("selected_language") || "python",
-    theme: "vs-dark",
+    language: "python",
+    theme: currentTheme === "dark" ? "vs-dark" : "vs",
     automaticLayout: true
   });
 });
 
-async function fetchQuestion() {
-  document.getElementById("completionBox").classList.add("hidden");
+/* ---------- THEME TOGGLE ---------- */
+function toggleTheme() {
+  currentTheme = currentTheme === "dark" ? "light" : "dark";
+  document.body.className = currentTheme;
+  localStorage.setItem("theme", currentTheme);
 
+  if (editor) {
+    monaco.editor.setTheme(currentTheme === "dark" ? "vs-dark" : "vs");
+  }
+}
+
+async function fetchQuestion() {
   const res = await fetch("/generate", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      topic: sessionStorage.getItem("topic"),
-      difficulty: sessionStorage.getItem("difficulty"),
-      language: sessionStorage.getItem("language")
+      topic: sessionStorage.getItem("topic") || "arrays",
+      difficulty: sessionStorage.getItem("difficulty") || "easy",
+      language: sessionStorage.getItem("language") || "python"
     })
   });
 
+  if (res.status === 429) {
+    showAIBox(
+      "🚫 Daily Limit Reached",
+      "Your free daily AI quota is exhausted.\nPlease come back tomorrow or upgrade."
+    );
+    return; // ❗ STOP HERE
+  }
+
+  if (!res.ok) {
+    showAIBox("❌ Error", "Failed to generate question.");
+    return;
+  }
+
   const q = await res.json();
-
-  document.getElementById("q-title").innerText = q.title;
-  document.getElementById("q-desc").innerText = q.problem_statement;
-
-  document.getElementById("samples").innerText =
-    q.samples.map(s => `Input:\n${s.input}\nOutput:\n${s.output}`).join("\n\n");
-
-  window.currentTestcases = q.testcases;
+  localStorage.setItem("currentQuestion", JSON.stringify(q));
+  renderQuestion(q);
 }
 
-fetchQuestion();
 
+function renderQuestion(q) {
+  qTitle.innerText = q.title;
+  qDesc.innerText = q.problem_statement;
+  samples.innerText = q.samples.map(
+    s => `Input:\n${s.input}\nOutput:\n${s.output}`
+  ).join("\n\n");
+  window.currentTestcases = q.testcases;
+  closeAIBox();
+}
+
+/* ---------- AI ---------- */
+async function getAISolution() {
+  const q = JSON.parse(localStorage.getItem("currentQuestion"));
+  const res = await fetch("/ai/solution", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question: q })
+  });
+  const d = await res.json();
+  showAIBox("🤖 AI Solution", d.solution);
+}
+
+async function getAICodeReview() {
+  const q = JSON.parse(localStorage.getItem("currentQuestion"));
+  const res = await fetch("/ai/code-review", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question:q, code:editor.getValue(), language:"python" })
+  });
+  const d = await res.json();
+  showAIBox("🧠 AI Code Review", d.review);
+}
+
+/* ---------- RUN / SUBMIT ---------- */
 async function runCode() {
+  if (!editor) return;
+
   const code = editor.getValue();
-  const language = sessionStorage.getItem("language");
+  const language =
+    sessionStorage.getItem("language") ||
+    localStorage.getItem("selected_language") ||
+    "python";
+
+  if (!window.currentTestcases || window.currentTestcases.length === 0) {
+    showAIBox("⚠️ Error", "No testcases available. Regenerate the question.");
+    return;
+  }
 
   const res = await fetch("/run", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ language, code })
+    body: JSON.stringify({
+      language: language,
+      code: code,
+      testcases: window.currentTestcases
+    })
   });
+
+  if (res.status === 429) {
+    showAIBox("⏳ Slow Down", "Please wait before running again.");
+    return;
+  }
 
   const data = await res.json();
 
-  document.getElementById("results").classList.remove("hidden");
-  document.getElementById("results").innerText =
-    data.output || data.message || "No output";
+  const resultsDiv = document.getElementById("results");
+  resultsDiv.classList.remove("hidden");
+
+  if (data.status !== "ok") {
+    resultsDiv.innerText = data.message || "Execution failed.";
+    return;
+  }
+
+  resultsDiv.innerText =
+`Input:
+${data.input}
+
+Your Output:
+${data.your_output}
+
+Expected Output:
+${data.expected_output}
+
+Result:
+${data.pass ? "✅ Correct" : "❌ Wrong"}`;
 }
 
 async function submitCode() {
+  if (!editor) return;
+
   const code = editor.getValue();
-  const language = sessionStorage.getItem("language");
+  const language =
+    sessionStorage.getItem("language") ||
+    localStorage.getItem("selected_language") ||
+    "python";
+
+  if (!window.currentTestcases || window.currentTestcases.length === 0) {
+    alert("No testcases available. Please regenerate the question.");
+    return;
+  }
 
   const res = await fetch("/submit", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      language,
-      code,
+      language: language,
+      code: code,
       testcases: window.currentTestcases
     })
   });
@@ -130,38 +333,83 @@ async function submitCode() {
   const data = await res.json();
 
   if (data.status !== "ok") {
-    alert("Execution failed");
+    alert(data.message || "Submission failed.");
     return;
   }
 
   let allPassed = true;
   let outputText = "";
 
-  data.results.forEach(r => {
-    outputText += `Input:\n${r.input}\nExpected:\n${r.expected}\nGot:\n${r.got}\n\n`;
+  data.results.forEach((r, i) => {
+    outputText +=
+`Testcase ${i + 1}
+Input:
+${r.input}
+
+Expected:
+${r.expected}
+
+Your Output:
+${r.got}
+
+Result: ${r.pass ? "✅ Passed" : "❌ Failed"}
+
+-----------------------\n`;
+
     if (!r.pass) allPassed = false;
   });
 
-  document.getElementById("results").classList.remove("hidden");
-  document.getElementById("results").innerText = outputText;
+  const resultsDiv = document.getElementById("results");
+  resultsDiv.classList.remove("hidden");
+  resultsDiv.innerText = outputText;
 
+  // ✅ mark solved only if all pass
   if (allPassed) {
     await fetch("/mark_solved", { method: "POST" });
     document.getElementById("completionBox").classList.remove("hidden");
   }
 }
 
-function regenerateQuestion() {
-  fetchQuestion();
+async function regenerateQuestion() {
+  closeAIBox();
+
+  const res = await fetch("/generate", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      topic: sessionStorage.getItem("topic") || "arrays",
+      difficulty: sessionStorage.getItem("difficulty") || "easy",
+      language: sessionStorage.getItem("language") || "python"
+    })
+  });
+
+  if (res.status === 429) {
+    showAIBox(
+      "🚫 Daily Limit Reached",
+      "No more free AI generations left today."
+    );
+    return;
+  }
+
+  const q = await res.json();
+  localStorage.setItem("currentQuestion", JSON.stringify(q));
+  renderQuestion(q);
 }
 
-function toggleTheme() {
-  document.body.classList.toggle("light");
-}
 
 function logout() {
   window.location.href = "/logout";
 }
+
+/* ---------- INIT ---------- */
+const aiBox = document.getElementById("aiBox");
+const aiTitle = document.getElementById("aiTitle");
+const aiContent = document.getElementById("aiContent");
+const qTitle = document.getElementById("q-title");
+const qDesc = document.getElementById("q-desc");
+const samples = document.getElementById("samples");
+
+fetchQuestion();
 </script>
 
 </body>
